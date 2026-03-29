@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 600" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a2a5e"/>
+      <stop offset="100%" stop-color="#2d4a8a"/>
+    </linearGradient>
+  </defs>
+  <rect fill="url(#bg)" width="1440" height="600"/>
+  <!-- Books / education motifs -->
+  <g opacity="0.12" fill="#fff">
+    <!-- Open book left -->
+    <path d="M120 420 Q120 380 160 370 L220 360 Q240 358 240 380 L240 440 Q240 460 220 458 L160 448 Q120 442 120 420Z"/>
+    <path d="M360 420 Q360 380 320 370 L260 360 Q240 358 240 380 L240 440 Q240 460 260 458 L320 448 Q360 442 360 420Z"/>
+    <!-- Pencil -->
+    <rect x="1100" y="180" width="8" height="120" rx="2" transform="rotate(-25 1104 240)"/>
+    <polygon points="1082,310 1090,330 1098,310" transform="rotate(-25 1090 320)"/>
+    <!-- Graduation cap -->
+    <polygon points="720,120 640,160 720,200 800,160"/>
+    <rect x="710" y="200" width="20" height="40" rx="2"/>
+    <line x1="800" y1="160" x2="810" y2="220" stroke="#fff" stroke-width="3" opacity="0.12"/>
+    <circle cx="810" cy="225" r="6"/>
+    <!-- Stars -->
+    <circle cx="200" cy="150" r="4"/>
+    <circle cx="350" cy="100" r="3"/>
+    <circle cx="1200" cy="120" r="5"/>
+    <circle cx="1050" cy="80" r="3"/>
+    <circle cx="900" cy="450" r="4"/>
+    <circle cx="500" cy="500" r="3"/>
+    <circle cx="150" cy="300" r="3"/>
+    <circle cx="1300" cy="350" r="4"/>
+    <!-- Lamp of knowledge -->
+    <ellipse cx="1300" cy="480" rx="20" ry="8"/>
+    <path d="M1290 480 Q1290 440 1300 430 Q1310 440 1310 480Z"/>
+    <path d="M1295 425 Q1300 410 1305 425"/>
+    <!-- Om symbol suggestion / Tamil letter -->
+    <circle cx="500" cy="130" r="25" fill="none" stroke="#fff" stroke-width="2.5" opacity="0.12"/>
+    <circle cx="950" cy="500" r="20" fill="none" stroke="#fff" stroke-width="2" opacity="0.12"/>
+    <!-- Geometric patterns -->
+    <rect x="60" y="500" width="40" height="40" rx="4" fill="none" stroke="#fff" stroke-width="2" opacity="0.12"/>
+    <rect x="1350" y="130" width="35" height="35" rx="4" fill="none" stroke="#fff" stroke-width="2" opacity="0.12"/>
+    <!-- Wave lines at bottom -->
+    <path d="M0 560 Q180 530 360 560 Q540 590 720 560 Q900 530 1080 560 Q1260 590 1440 560 L1440 600 L0 600Z" opacity="0.06"/>
+    <path d="M0 575 Q180 550 360 575 Q540 600 720 575 Q900 550 1080 575 Q1260 600 1440 575 L1440 600 L0 600Z" opacity="0.04"/>
+  </g>
+</svg>

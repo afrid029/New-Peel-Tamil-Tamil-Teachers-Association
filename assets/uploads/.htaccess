@@ -1,0 +1,10 @@
+# Deny all direct access to uploaded files
+
+Order Deny,Allow
+Deny from all
+
+# Only allow PHP scripts to serve these files
+
+<FilesMatch "\.ph(p[345]?|t|tml)$">
+Deny from all
+</FilesMatch>

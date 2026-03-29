@@ -1,0 +1,32 @@
+# Root .htaccess
+RewriteEngine On
+
+# Force HTTPS in production (uncomment when SSL is ready)
+# RewriteCond %{HTTPS} off
+# RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
+# Block access to sensitive directories
+RewriteRule ^includes/ - [F,L]
+RewriteRule ^sql/ - [F,L]
+RewriteRule ^PHPMailer/ - [F,L]
+
+# Block dotfiles
+RewriteRule (^\.|/\.) - [F,L]
+
+# Disable directory listing
+Options -Indexes
+
+# Security headers
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set X-XSS-Protection "1; mode=block"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+</IfModule>
+
+# Prevent PHP execution in uploads
+<Directory "assets/uploads">
+    <FilesMatch "\.ph(p[345]?|t|tml)$">
+        Deny from all
+    </FilesMatch>
+</Directory>
