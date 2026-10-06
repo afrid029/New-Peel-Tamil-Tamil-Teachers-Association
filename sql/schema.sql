@@ -10,7 +10,7 @@ USE nptta_db;
 
 -- ---------------------------------------------------
 -- Users Table (all roles: super_admin, manager, teacher, student)
--- AUTO_INCREMENT starts at 100000 so manual 5-digit IDs can coexist
+-- AUTO_INCREMENT starts at 1000 so manual IDs (1–999) can coexist
 -- ---------------------------------------------------
 CREATE TABLE
     users (
@@ -27,7 +27,7 @@ CREATE TABLE
         first_login TINYINT (1) NOT NULL DEFAULT 1,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-    ) ENGINE = InnoDB AUTO_INCREMENT = 100000 DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
+    ) ENGINE = InnoDB AUTO_INCREMENT = 1000 DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_unicode_ci;
 
 -- ---------------------------------------------------
 -- Schools
@@ -107,6 +107,7 @@ CREATE TABLE
         registration_id INT UNSIGNED NOT NULL,
         exam_type_id INT UNSIGNED NOT NULL,
         marks DECIMAL(6, 2) NULL,
+        placement ENUM ('1st', '2nd', '3rd') NULL DEFAULT NULL,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (registration_id) REFERENCES exam_registrations (id) ON DELETE CASCADE,

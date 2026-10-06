@@ -100,14 +100,17 @@ switch ($action) {
         if ($existing) {
             // Also fetch marks
             $mStmt = $db->prepare(
-                'SELECT exam_type_id, marks FROM results WHERE registration_id = ?'
+                'SELECT exam_type_id, marks, placement FROM results WHERE registration_id = ?'
             );
             $mStmt->execute([$existing['registration_id']]);
             $marks = [];
+            $placements = [];
             while ($row = $mStmt->fetch()) {
                 $marks[$row['exam_type_id']] = $row['marks'];
+                $placements[$row['exam_type_id']] = $row['placement'];
             }
             $existing['marks'] = $marks;
+            $existing['placements'] = $placements;
             $existing['type_ids'] = $existing['type_ids'] ? explode(',', $existing['type_ids']) : [];
         }
 
@@ -123,20 +126,30 @@ switch ($action) {
         $studentId = (int) ($_POST['student_id'] ?? 0);
         $grade     = trim($_POST['grade'] ?? '');
         $marksJson = $_POST['marks'] ?? '{}';
+        $placementsJson = $_POST['placements'] ?? '{}';
 
         if (!$examId)    jsonResponse(false, 'Exam is required.');
         if (!$studentId) jsonResponse(false, 'Student is required.');
         if ($grade === '') jsonResponse(false, 'Grade is required.');
 
         $marks = json_decode($marksJson, true);
+        $placements = json_decode($placementsJson, true);
         if (!is_array($marks) || empty($marks)) {
             jsonResponse(false, 'At least one exam type with marks is required.');
+        }
+        if (!is_array($placements)) {
+            jsonResponse(false, 'Invalid placement data.');
         }
 
         // Validate marks values
         foreach ($marks as $typeId => $value) {
             if ($value !== null && $value !== '' && (float) $value < 0) {
                 jsonResponse(false, 'Marks cannot be negative.');
+            }
+        }
+        foreach ($placements as $typeId => $placement) {
+            if (!array_key_exists($typeId, $marks) || ($placement !== null && !in_array($placement, ['1st', '2nd', '3rd'], true))) {
+                jsonResponse(false, 'Invalid exam type placement.');
             }
         }
 
@@ -175,13 +188,14 @@ switch ($action) {
 
             // Insert exam_registration_types and results
             $ertStmt = $db->prepare('INSERT INTO exam_registration_types (registration_id, exam_type_id) VALUES (?, ?)');
-            $resStmt = $db->prepare('INSERT INTO results (registration_id, exam_type_id, marks) VALUES (?, ?, ?)');
+            $resStmt = $db->prepare('INSERT INTO results (registration_id, exam_type_id, marks, placement) VALUES (?, ?, ?, ?)');
 
             foreach ($marks as $typeId => $value) {
                 $typeId = (int) $typeId;
                 $ertStmt->execute([$regId, $typeId]);
                 $marksVal = ($value !== null && $value !== '') ? (float) $value : null;
-                $resStmt->execute([$regId, $typeId, $marksVal]);
+                $placement = $placements[$typeId] ?? null;
+                $resStmt->execute([$regId, $typeId, $marksVal, $placement]);
             }
 
             $db->commit();
@@ -212,7 +226,7 @@ switch ($action) {
 
         foreach ($registrations as &$reg) {
             $ts = $db->prepare(
-                'SELECT et.id AS exam_type_id, et.name AS exam_type_name, r.marks
+                'SELECT et.id AS exam_type_id, et.name AS exam_type_name, r.marks, r.placement
                  FROM exam_registration_types ert
                  JOIN exam_types et ON ert.exam_type_id = et.id
                  LEFT JOIN results r ON r.registration_id = ert.registration_id AND r.exam_type_id = ert.exam_type_id

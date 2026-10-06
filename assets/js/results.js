@@ -5,6 +5,40 @@
   let totalPages = 1;
   const perPage = 20;
 
+  function placementOptions(examTypeId, selectedPlacement) {
+    return ["1st", "2nd", "3rd"]
+      .map(
+        (placement) => `
+          <label class="inline-flex items-center gap-1 text-xs" style="cursor:pointer;">
+            <input type="checkbox" class="res-placement-check" data-et="${examTypeId}" data-placement="${placement}" ${selectedPlacement === placement ? "checked" : ""}>
+            ${placement} Place
+          </label>`,
+      )
+      .join("");
+  }
+
+  function placementBadge(placement) {
+    const styles = {
+      "1st": "background:#fff2c2;color:#946200;",
+      "2nd": "background:#e8edf2;color:#56616f;",
+      "3rd": "background:#f7e4d8;color:#8a4b25;",
+    };
+    return styles[placement]
+      ? `<span style="display:inline-block;margin-left:6px;padding:2px 7px;border-radius:999px;font-size:11px;font-weight:700;${styles[placement]}">${placement} Place</span>`
+      : "";
+  }
+
+  document.addEventListener("change", (event) => {
+    const checkbox = event.target;
+    if (checkbox.matches(".res-placement-check") && checkbox.checked) {
+      document
+        .querySelectorAll(`.res-placement-check[data-et="${checkbox.dataset.et}"]`)
+        .forEach((other) => {
+          if (other !== checkbox) other.checked = false;
+        });
+    }
+  });
+
   async function loadExams() {
     try {
       const res = await App.get("api/results.php?action=exams");
@@ -45,7 +79,7 @@
       (s.exam_types || []).forEach((et) => {
         const val =
           et.marks !== null && et.marks !== undefined ? et.marks : "—";
-        html += `<div><span class="text-xs font-semibold" style="color:var(--text-light);">${App.esc(et.exam_type_name)}</span><br><span class="font-semibold">${App.esc(String(val))}</span></div>`;
+        html += `<div><span class="text-xs font-semibold" style="color:var(--text-light);">${App.esc(et.exam_type_name)}</span><br><span class="font-semibold">${App.esc(String(val))}</span>${placementBadge(et.placement)}</div>`;
       });
       html += `</div></td></tr>`;
     });
@@ -152,6 +186,9 @@
                    data-et="${et.exam_type_id}"
                    value="${et.marks !== null && et.marks !== undefined ? et.marks : ""}"
                    placeholder="Enter marks">
+            <div class="flex flex-wrap gap-3 mt-2" aria-label="Place for ${App.esc(et.exam_type_name)}">
+              ${placementOptions(et.exam_type_id, et.placement)}
+            </div>
           </div>`,
       )
       .join("");
@@ -167,28 +204,38 @@
       App.startLoading(btn);
 
       const regId = document.getElementById("marks-reg-id").value;
-      const inputs = document.querySelectorAll("#marks-fields input[data-et]");
+      const inputs = document.querySelectorAll(
+        '#marks-fields input[type="number"][data-et]',
+      );
       const marksObj = {};
+      const placementsObj = {};
       let hasValue = false;
       let invalidInput = false;
       inputs.forEach((inp) => {
         const v = inp.value.trim();
-        if (v !== "" && !isNaN(v)) {
-            if(Number(v) < 0) {
-                invalidInput = true;
-                return;
-            }
-          marksObj[inp.dataset.et] = v;
+        const numericMarks = v === "" ? null : Number(v);
+        marksObj[inp.dataset.et] = numericMarks;
+        const selectedPlacement = document.querySelector(
+          `.res-placement-check[data-et="${inp.dataset.et}"]:checked`,
+        );
+        placementsObj[inp.dataset.et] = selectedPlacement
+          ? selectedPlacement.dataset.placement
+          : null;
+        if (v !== "" && !Number.isFinite(numericMarks)) {
+          invalidInput = true;
+        } else if (numericMarks !== null) {
+          if (numericMarks < 0) {
+            invalidInput = true;
+          } else {
           hasValue = true;
-        }else {
-            marksObj[inp.dataset.et] = null; 
+          }
         }
       });
 
       
 
       if (invalidInput) {
-        App.toast("Marks cannot be negative.", "error");
+        App.toast("Enter valid, non-negative marks.", "error");
         App.stopLoading(btn);
         return;
       }
@@ -203,6 +250,7 @@
           action: "update_bulk",
           registration_id: regId,
           marks: JSON.stringify(marksObj),
+          placements: JSON.stringify(placementsObj),
         });
         App.toast(res.message, res.status ? "success" : "error");
         if (res.status) {
@@ -212,6 +260,7 @@
             student.exam_types.forEach((et) => {
               if (marksObj[et.exam_type_id] !== undefined) {
                 et.marks = marksObj[et.exam_type_id];
+                et.placement = placementsObj[et.exam_type_id];
               }
             });
           }

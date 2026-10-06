@@ -25,6 +25,7 @@ define('SMTP_PASS', '');
 define('SMTP_FROM', 'mafrid029@gmail.com');
 define('SMTP_FROM_NAME', APP_NAME);
 
+
 // Upload
 define('UPLOAD_DIR', APP_ROOT . '/assets/uploads');
 define('MAX_UPLOAD_SIZE', 5 * 1024 * 1024); // 5 MB

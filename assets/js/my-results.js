@@ -77,9 +77,17 @@
 
       let html =
         '<table class="data-table result-table" style="border-radius:8px;overflow:hidden;">';
-      html += "<thead><tr><th>Exam Type</th><th>Marks</th></tr></thead><tbody>";
+      html += "<thead><tr><th>Exam Type</th><th>Marks</th><th>Placement</th></tr></thead><tbody>";
       res.data.forEach((r) => {
-        html += `<tr><td>${App.esc(r.exam_type)}</td><td>${r.marks !== null ? r.marks : "—"}</td></tr>`;
+        const placementStyles = {
+          "1st": "background:#fff2c2;color:#805500;",
+          "2nd": "background:#e8edf2;color:#4b5563;",
+          "3rd": "background:#f7e4d8;color:#87421f;",
+        };
+        const placement = placementStyles[r.placement]
+          ? `<span style="display:inline-block;padding:4px 10px;border-radius:999px;font-size:12px;font-weight:700;${placementStyles[r.placement]}">${r.placement} Place</span>`
+          : "—";
+        html += `<tr><td>${App.esc(r.exam_type)}</td><td>${r.marks !== null ? App.esc(String(r.marks)) : "—"}</td><td>${placement}</td></tr>`;
       });
       html += "</tbody></table>";
       body.innerHTML = html;

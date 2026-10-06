@@ -681,7 +681,7 @@ body {
 /* ---------- Notices Grid ---------- */
 .notices-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    grid-template-columns: 1;
     gap: 20px;
 }
 

@@ -61,9 +61,29 @@ switch ($action) {
         $tempPw = generateTempPassword();
         $hash   = password_hash($tempPw, PASSWORD_BCRYPT, ['cost' => 12]);
 
-        $stmt = $db->prepare('INSERT INTO users (first_name, last_name, email, password, role) VALUES (?, ?, ?, ?, "teacher")');
-        $stmt->execute([$fname, $lname, $email, $hash]);
-        $newId = (int) $db->lastInsertId();
+        $stmt = $db->prepare(
+            'INSERT INTO users (id, first_name, last_name, email, password, role)
+            VALUES (?, ?, ?, ?, ?, "teacher")'
+        );
+
+        $newId = null;
+        for ($attempt = 0; $attempt < 3; $attempt++) {
+            try {
+                $candidate = getFreeLowId($db);
+                $stmt->execute([$candidate, $fname, $lname, $email, $hash]);
+                $newId = $candidate;
+                break;
+            } catch (RuntimeException $e) {
+                jsonResponse(false, 'No free teacher ids available.');
+            } catch (PDOException $e) {
+                // 1062 = duplicate key. Retry only if it was the id (another request took it)
+                $isDup = ($e->errorInfo[1] ?? 0) === 1062;
+                $isPk  = $isDup && stripos($e->getMessage(), 'PRIMARY') !== false;
+                if (!$isPk) throw $e;   // email duplicate or other error: don't swallow
+            }
+        }
+
+        if ($newId === null) jsonResponse(false, 'Could not allocate an id, please try again.');
 
         sendWelcomeEmail($email, $fname, $tempPw, 'teacher');
 

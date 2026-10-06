@@ -134,6 +134,7 @@ CREATE TABLE `results` (
   `registration_id` int(10) UNSIGNED NOT NULL,
   `exam_type_id` int(10) UNSIGNED NOT NULL,
   `marks` decimal(6,2) DEFAULT NULL,
+  `placement` enum('1st','2nd','3rd') DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

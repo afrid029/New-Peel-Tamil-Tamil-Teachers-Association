@@ -9,6 +9,40 @@
   let examsCache = [];
   let examTypesCache = [];
 
+  function placementOptions(examTypeId, selectedPlacement) {
+    return ["1st", "2nd", "3rd"]
+      .map(
+        (placement) => `
+          <label class="inline-flex items-center gap-1 text-xs" style="cursor:pointer;">
+            <input type="checkbox" class="me-placement-check" data-et="${examTypeId}" data-placement="${placement}" ${selectedPlacement === placement ? "checked" : ""}>
+            ${placement} Place
+          </label>`,
+      )
+      .join("");
+  }
+
+  function placementBadge(placement) {
+    const styles = {
+      "1st": "background:#fff2c2;color:#946200;",
+      "2nd": "background:#e8edf2;color:#56616f;",
+      "3rd": "background:#f7e4d8;color:#8a4b25;",
+    };
+    return styles[placement]
+      ? `<span style="display:inline-block;margin-left:6px;padding:2px 7px;border-radius:999px;font-size:11px;font-weight:700;${styles[placement]}">${placement} Place</span>`
+      : "";
+  }
+
+  document.addEventListener("change", (event) => {
+    const checkbox = event.target;
+    if (checkbox.matches(".me-placement-check") && checkbox.checked) {
+      document
+        .querySelectorAll(`.me-placement-check[data-et="${checkbox.dataset.et}"]`)
+        .forEach((other) => {
+          if (other !== checkbox) other.checked = false;
+        });
+    }
+  });
+
   /* ---------- Load students ---------- */
   window.loadMEStudents = async function (page) {
     if (typeof page === "number") currentPage = page;
@@ -154,7 +188,7 @@
             et.marks !== null && et.marks !== undefined ? et.marks : "—";
           html += `<div style="background:#f8fafc;border-radius:6px;padding:8px 10px;">`;
           html += `<span class="text-xs" style="color:var(--text-light);">${App.esc(et.exam_type_name)}</span><br>`;
-          html += `<span class="font-semibold">${App.esc(String(val))}</span>`;
+          html += `<span class="font-semibold">${App.esc(String(val))}</span>${placementBadge(et.placement)}`;
           html += `</div>`;
         });
         html += `</div></div>`;
@@ -206,7 +240,7 @@
     App.openModal("me-modal");
   };
 
-  function renderExamTypeInputs(existingMarks) {
+  function renderExamTypeInputs(existingMarks, existingPlacements) {
     const container = document.getElementById("me-exam-types");
     if (!examTypesCache.length) {
       container.innerHTML =
@@ -223,10 +257,12 @@
         existingMarks[et.id] !== null
           ? existingMarks[et.id]
           : "";
+      const placement = existingPlacements ? existingPlacements[et.id] : null;
       html += `<div class="flex items-center gap-3 mb-2" style="padding:8px 12px;background:#f8fafc;border-radius:8px;">`;
       html += `<input type="checkbox" id="me-et-${et.id}" data-et="${et.id}" class="me-et-check" ${checked ? "checked" : ""} style="width:18px;height:18px;accent-color:var(--primary);">`;
       html += `<label for="me-et-${et.id}" class="flex-1 text-sm font-medium" style="cursor:pointer;">${App.esc(et.name)}</label>`;
       html += `<input type="number" step="0.5" min="0" class="form-input me-et-marks" data-et="${et.id}" value="${App.esc(String(val))}" placeholder="Marks" style="width:100px;padding:6px 10px;">`;
+      html += `<div class="flex flex-wrap gap-2" aria-label="Place for ${App.esc(et.name)}">${placementOptions(et.id, placement)}</div>`;
       html += `</div>`;
     });
     container.innerHTML = html;
@@ -254,7 +290,7 @@
           document.getElementById("me-grade").value = res.existing.grade;
         }
         // Pre-fill marks
-        renderExamTypeInputs(res.existing.marks || {});
+        renderExamTypeInputs(res.existing.marks || {}, res.existing.placements || {});
       } else {
         renderExamTypeInputs();
       }
@@ -287,6 +323,7 @@
       // Collect checked exam types with marks
       const marksInputs = document.querySelectorAll(".me-et-marks");
       const marksObj = {};
+      const placementsObj = {};
       let hasType = false;
       let invalid = false;
 
@@ -299,6 +336,12 @@
             invalid = true;
           }
           marksObj[inp.dataset.et] = v !== "" ? v : null;
+          const selectedPlacement = document.querySelector(
+            `.me-placement-check[data-et="${inp.dataset.et}"]:checked`,
+          );
+          placementsObj[inp.dataset.et] = selectedPlacement
+            ? selectedPlacement.dataset.placement
+            : null;
         }
       });
 
@@ -320,6 +363,7 @@
           exam_id: examId,
           grade: grade,
           marks: JSON.stringify(marksObj),
+          placements: JSON.stringify(placementsObj),
         });
         App.toast(res.message, res.status ? "success" : "error");
         if (res.status) {

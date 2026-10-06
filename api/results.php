@@ -59,7 +59,7 @@ switch ($action) {
         foreach ($students as &$s) {
             $etStmt = $db->prepare(
                 'SELECT ert.exam_type_id, et.name AS exam_type_name,
-                        r.marks
+                        r.marks, r.placement
                  FROM exam_registration_types ert
                  JOIN exam_types et ON ert.exam_type_id = et.id
                  LEFT JOIN results r ON r.registration_id = ert.registration_id AND r.exam_type_id = ert.exam_type_id
@@ -81,9 +81,13 @@ switch ($action) {
         $registrationId = (int) ($_POST['registration_id'] ?? 0);
         $examTypeId     = (int) ($_POST['exam_type_id'] ?? 0);
         $marks          = $_POST['marks'] ?? '';
+        $hasPlacement   = array_key_exists('placement', $_POST);
+        $placement      = $hasPlacement ? $_POST['placement'] : null;
+        $placement      = $placement === '' ? null : $placement;
 
         if (!$registrationId || !$examTypeId) jsonResponse(false, 'Registration and exam type are required.');
         if ($marks === '' || !is_numeric($marks)) jsonResponse(false, 'Valid marks are required.');
+        if ($hasPlacement && $placement !== null && !in_array($placement, ['1st', '2nd', '3rd'], true)) jsonResponse(false, 'Invalid placement.');
 
         $db = getDB();
 
@@ -92,11 +96,16 @@ switch ($action) {
         $existing->execute([$registrationId, $examTypeId]);
 
         if ($existing->fetch()) {
-            $stmt = $db->prepare('UPDATE results SET marks = ? WHERE registration_id = ? AND exam_type_id = ?');
-            $stmt->execute([$marks, $registrationId, $examTypeId]);
+            if ($hasPlacement) {
+                $stmt = $db->prepare('UPDATE results SET marks = ?, placement = ? WHERE registration_id = ? AND exam_type_id = ?');
+                $stmt->execute([$marks, $placement, $registrationId, $examTypeId]);
+            } else {
+                $stmt = $db->prepare('UPDATE results SET marks = ? WHERE registration_id = ? AND exam_type_id = ?');
+                $stmt->execute([$marks, $registrationId, $examTypeId]);
+            }
         } else {
-            $stmt = $db->prepare('INSERT INTO results (registration_id, exam_type_id, marks) VALUES (?, ?, ?)');
-            $stmt->execute([$registrationId, $examTypeId, $marks]);
+            $stmt = $db->prepare('INSERT INTO results (registration_id, exam_type_id, marks, placement) VALUES (?, ?, ?, ?)');
+            $stmt->execute([$registrationId, $examTypeId, $marks, $placement]);
         }
 
         jsonResponse(true, 'Marks updated successfully.');
@@ -112,7 +121,8 @@ switch ($action) {
 
         $marksJson = $_POST['marks'] ?? '{}';
         $marksData = json_decode($marksJson, true);
-        if (!is_array($marksData) || empty($marksData)) jsonResponse(false, 'No marks provided.');
+        $placementsData = json_decode($_POST['placements'] ?? '{}', true);
+        if (!is_array($marksData) || !is_array($placementsData) || (empty($marksData) && empty($placementsData))) jsonResponse(false, 'No marks provided.');
 
         $db = getDB();
 
@@ -121,21 +131,40 @@ switch ($action) {
         $regCheck->execute([$registrationId]);
         if (!$regCheck->fetch()) jsonResponse(false, 'Registration not found.');
 
-        foreach ($marksData as $examTypeId => $marks) {
+        $examTypeIds = array_unique(array_merge(array_keys($marksData), array_keys($placementsData)));
+        foreach ($examTypeIds as $examTypeId) {
             $examTypeId = (int) $examTypeId;
             if ($examTypeId <= 0) continue;
-            if ($marks === '' || $marks === null) continue;
-            if (!is_numeric($marks)) continue;
+            $hasMarks = array_key_exists($examTypeId, $marksData);
+            $hasPlacement = array_key_exists($examTypeId, $placementsData);
+            $marks = $hasMarks ? $marksData[$examTypeId] : null;
+            $placement = $hasPlacement ? $placementsData[$examTypeId] : null;
+            if ($hasMarks && $marks !== null && $marks !== '') {
+                if (!is_numeric($marks)) jsonResponse(false, 'Marks must be numeric.');
+                if ((float) $marks < 0) jsonResponse(false, 'Marks cannot be negative.');
+            }
+            if ($hasPlacement && $placement !== null && !in_array($placement, ['1st', '2nd', '3rd'], true)) {
+                jsonResponse(false, 'Invalid placement.');
+            }
+            if (!$hasMarks && !$hasPlacement) continue;
 
             $existing = $db->prepare('SELECT id FROM results WHERE registration_id = ? AND exam_type_id = ?');
             $existing->execute([$registrationId, $examTypeId]);
 
             if ($existing->fetch()) {
-                $stmt = $db->prepare('UPDATE results SET marks = ? WHERE registration_id = ? AND exam_type_id = ?');
-                $stmt->execute([$marks, $registrationId, $examTypeId]);
+                if ($hasMarks && $hasPlacement) {
+                    $stmt = $db->prepare('UPDATE results SET marks = ?, placement = ? WHERE registration_id = ? AND exam_type_id = ?');
+                    $stmt->execute([$marks === '' ? null : $marks, $placement, $registrationId, $examTypeId]);
+                } elseif ($hasMarks) {
+                    $stmt = $db->prepare('UPDATE results SET marks = ? WHERE registration_id = ? AND exam_type_id = ?');
+                    $stmt->execute([$marks === '' ? null : $marks, $registrationId, $examTypeId]);
+                } else {
+                    $stmt = $db->prepare('UPDATE results SET placement = ? WHERE registration_id = ? AND exam_type_id = ?');
+                    $stmt->execute([$placement, $registrationId, $examTypeId]);
+                }
             } else {
-                $stmt = $db->prepare('INSERT INTO results (registration_id, exam_type_id, marks) VALUES (?, ?, ?)');
-                $stmt->execute([$registrationId, $examTypeId, $marks]);
+                $stmt = $db->prepare('INSERT INTO results (registration_id, exam_type_id, marks, placement) VALUES (?, ?, ?, ?)');
+                $stmt->execute([$registrationId, $examTypeId, $marks === '' ? null : $marks, $placement]);
             }
         }
 
@@ -159,7 +188,7 @@ switch ($action) {
         if (!$regStmt->fetch()) jsonResponse(false, 'Registration not found.');
 
         $stmt = $db->prepare(
-            'SELECT et.name AS exam_type, r.marks
+            'SELECT et.name AS exam_type, r.marks, r.placement
              FROM exam_registration_types ert
              JOIN exam_types et ON ert.exam_type_id = et.id
              LEFT JOIN results r ON r.registration_id = ert.registration_id AND r.exam_type_id = ert.exam_type_id
