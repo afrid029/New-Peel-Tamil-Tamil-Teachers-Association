@@ -32,7 +32,9 @@
     const checkbox = event.target;
     if (checkbox.matches(".res-placement-check") && checkbox.checked) {
       document
-        .querySelectorAll(`.res-placement-check[data-et="${checkbox.dataset.et}"]`)
+        .querySelectorAll(
+          `.res-placement-check[data-et="${checkbox.dataset.et}"]`,
+        )
         .forEach((other) => {
           if (other !== checkbox) other.checked = false;
         });
@@ -227,12 +229,10 @@
           if (numericMarks < 0) {
             invalidInput = true;
           } else {
-          hasValue = true;
+            hasValue = true;
           }
         }
       });
-
-      
 
       if (invalidInput) {
         App.toast("Enter valid, non-negative marks.", "error");

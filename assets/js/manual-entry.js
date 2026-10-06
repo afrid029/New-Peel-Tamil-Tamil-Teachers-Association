@@ -36,7 +36,9 @@
     const checkbox = event.target;
     if (checkbox.matches(".me-placement-check") && checkbox.checked) {
       document
-        .querySelectorAll(`.me-placement-check[data-et="${checkbox.dataset.et}"]`)
+        .querySelectorAll(
+          `.me-placement-check[data-et="${checkbox.dataset.et}"]`,
+        )
         .forEach((other) => {
           if (other !== checkbox) other.checked = false;
         });
@@ -290,7 +292,10 @@
           document.getElementById("me-grade").value = res.existing.grade;
         }
         // Pre-fill marks
-        renderExamTypeInputs(res.existing.marks || {}, res.existing.placements || {});
+        renderExamTypeInputs(
+          res.existing.marks || {},
+          res.existing.placements || {},
+        );
       } else {
         renderExamTypeInputs();
       }

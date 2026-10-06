@@ -77,7 +77,8 @@
 
       let html =
         '<table class="data-table result-table" style="border-radius:8px;overflow:hidden;">';
-      html += "<thead><tr><th>Exam Type</th><th>Marks</th><th>Placement</th></tr></thead><tbody>";
+      html +=
+        "<thead><tr><th>Exam Type</th><th>Marks</th><th>Placement</th></tr></thead><tbody>";
       res.data.forEach((r) => {
         const placementStyles = {
           "1st": "background:#fff2c2;color:#805500;",
